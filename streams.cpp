@@ -25,124 +25,141 @@ static cs::extension streams_ext;
 static cs::extension_t streams_ext_shared = cs::make_shared_extension(streams_ext);
 
 namespace streams {
-    using namespace cs;
+	using namespace cs;
 
-    struct streams_holder {
-        cs::list collection;
-    };
+	struct streams_holder {
+		cs::list collection;
+	};
 
-    static var call(const var &mayCall, var &arg) {
-        if (mayCall.type() == typeid(object_method)) {
-            const auto &om = mayCall.const_val<object_method>();
-            vector args{om.object, arg};
-            return om.callable.const_val<callable>().call(args);
-        } else if (mayCall.type() == typeid(callable)) {
-            const auto &predicate = mayCall.const_val<callable>();
-            vector args = {arg};
-            return predicate.call(args);
-        }
-        return null_pointer;
-    }
+	template <typename... ArgsT>
+	var invoke(const var &func, ArgsT &&... _args)
+	{
+		if (func.type() == typeid(callable)) {
+			vector args{std::forward<ArgsT>(_args)...};
+			return func.const_val<callable>().call(args);
+		}
+		else if (func.type() == typeid(object_method)) {
+			const object_method &om = func.const_val<object_method>();
+			vector args{om.object, std::forward<ArgsT>(_args)...};
+			return om.callable.const_val<callable>().call(args);
+		}
+		return null_pointer;
+	}
 
-    streams_holder of(const cs::list &list) {
-        return streams_holder{list};
-    }
+	streams_holder of(const cs::list &list)
+	{
+		return streams_holder{list};
+	}
 
-    streams_holder for_each(streams_holder &holder, callable mayCall) {
-        std::for_each(holder.collection.begin(), holder.collection.end(),
-            [&mayCall](cs_impl::any &item) {
-                call(mayCall, item);
-            });
-        return holder;
-    }
+	streams_holder for_each(streams_holder &holder, const var &mayCall)
+	{
+		std::for_each(holder.collection.begin(), holder.collection.end(),
+		[&mayCall](const var &item) {
+			invoke(mayCall, item);
+		});
+		return holder;
+	}
 
-    streams_holder filter(streams_holder &holder, callable mayCall) {
-        cs::list new_list;
-        std::for_each(holder.collection.begin(), holder.collection.end(),
-                      [&mayCall, &new_list](cs_impl::any &item) {
-                          if (call(mayCall, item).const_val<boolean>()) {
-                              new_list.push_back(item);
-                          }
-                      });
-        holder.collection = new_list;
-        return holder;
-    }
+	streams_holder filter(streams_holder &holder, const var &mayCall)
+	{
+		cs::list new_list;
+		std::for_each(holder.collection.begin(), holder.collection.end(),
+		[&mayCall, &new_list](const var &item) {
+			if (invoke(mayCall, item).const_val<cs::boolean>()) {
+				new_list.push_back(item);
+			}
+		});
+		std::swap(holder.collection, new_list);
+		return holder;
+	}
 
-    streams_holder limit(streams_holder &holder) {
-        return holder;
-    }
+	streams_holder limit(streams_holder &holder)
+	{
+		return holder;
+	}
 
-    cs::list to_list(streams_holder &holder) {
-        return holder.collection;
-    }
+	cs::list to_list(streams_holder &holder)
+	{
+		return holder.collection;
+	}
 
-    streams_holder skip(streams_holder &holder, number n) {
-        auto count = std::min(static_cast<int>(n),
-                              static_cast<int>(holder.collection.size()));
-        for (int i = 0; i < count; ++i) {
-            holder.collection.pop_front();
-        }
-        return holder;
-    }
+	streams_holder skip(streams_holder &holder, number n)
+	{
+		auto count = std::min(static_cast<int>(n),
+		                      static_cast<int>(holder.collection.size()));
+		for (int i = 0; i < count; ++i) {
+			holder.collection.pop_front();
+		}
+		return holder;
+	}
 
-    streams_holder reverse(streams_holder &holder) {
-        holder.collection.reverse();
-        return holder;
-    }
+	streams_holder reverse(streams_holder &holder)
+	{
+		holder.collection.reverse();
+		return holder;
+	}
 
-    number count(const streams_holder &holder) {
-        return number(holder.collection.size());
-    }
+	number count(const streams_holder &holder)
+	{
+		return number(holder.collection.size());
+	}
 
-    boolean any_match(streams_holder &holder) {
-        return true;
-    }
+	cs::boolean any_match(streams_holder &holder)
+	{
+		return true;
+	}
 
-    boolean all_match(streams_holder &holder) {
-        return true;
-    }
+	cs::boolean all_match(streams_holder &holder)
+	{
+		return true;
+	}
 
-    var find_first(streams_holder &holder) {
-        if (!holder.collection.empty()) {
-            return holder.collection.front();
-        }
-        return null_pointer;
-    }
+	var find_first(streams_holder &holder)
+	{
+		if (!holder.collection.empty()) {
+			return holder.collection.front();
+		}
+		return null_pointer;
+	}
 
-    var find_any(streams_holder &holder) {
-        return find_first(holder);
-    }
+	var find_any(streams_holder &holder)
+	{
+		return find_first(holder);
+	}
 
-    void init() {
-        streams_ext.add_var("of", var::make_protect<callable>(cni(of), true));
-        streams_ext.add_var("for_each", var::make_protect<callable>(cni(for_each), true));
-        streams_ext.add_var("count", var::make_protect<callable>(cni(count), true));
-        streams_ext.add_var("skip", var::make_protect<callable>(cni(skip), true));
-        streams_ext.add_var("reverse", var::make_protect<callable>(cni(reverse), true));
-        streams_ext.add_var("filter", var::make_protect<callable>(cni(filter), true));
-        streams_ext.add_var("any_match", var::make_protect<callable>(cni(any_match), true));
-        streams_ext.add_var("all_match", var::make_protect<callable>(cni(all_match), true));
-        streams_ext.add_var("find_first", var::make_protect<callable>(cni(find_first), true));
-        streams_ext.add_var("find_any", var::make_protect<callable>(cni(find_any), true));
-        streams_ext.add_var("limit", var::make_protect<callable>(cni(limit), true));
-        streams_ext.add_var("to_list", var::make_protect<callable>(cni(to_list), true));
-    }
+	void init()
+	{
+		streams_ext.add_var("of", var::make_protect<callable>(cni(of), true));
+		streams_ext.add_var("for_each", var::make_protect<callable>(cni(for_each), true));
+		streams_ext.add_var("count", var::make_protect<callable>(cni(count), true));
+		streams_ext.add_var("skip", var::make_protect<callable>(cni(skip), true));
+		streams_ext.add_var("reverse", var::make_protect<callable>(cni(reverse), true));
+		streams_ext.add_var("filter", var::make_protect<callable>(cni(filter), true));
+		streams_ext.add_var("any_match", var::make_protect<callable>(cni(any_match), true));
+		streams_ext.add_var("all_match", var::make_protect<callable>(cni(all_match), true));
+		streams_ext.add_var("find_first", var::make_protect<callable>(cni(find_first), true));
+		streams_ext.add_var("find_any", var::make_protect<callable>(cni(find_any), true));
+		streams_ext.add_var("limit", var::make_protect<callable>(cni(limit), true));
+		streams_ext.add_var("to_list", var::make_protect<callable>(cni(to_list), true));
+	}
 }
 
 namespace cs_impl {
-    template<>
-    cs::extension_t &get_ext<streams::streams_holder>() {
-        return streams_ext_shared;
-    }
+	template <>
+	cs::extension_t &get_ext<streams::streams_holder>()
+	{
+		return streams_ext_shared;
+	}
 
-    template<>
-    constexpr const char *get_name_of_type<streams::streams_holder>() {
-        return "cs::streams";
-    }
+	template <>
+	constexpr const char *get_name_of_type<streams::streams_holder>()
+	{
+		return "cs::streams";
+	}
 }
 
-cs::extension *cs_extension() {
-    streams::init();
-    return &streams_ext;
+cs::extension *cs_extension()
+{
+	streams::init();
+	return &streams_ext;
 }
-
