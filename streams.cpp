@@ -18,127 +18,69 @@
  * Email: libkernelpanic@gmail.com
  * Github: https://github.com/imkiva
  */
-#include <regex>
 #include <covscript/cni.hpp>
 #include <covscript/extension.hpp>
 
-static cs::extension regex_ext;
-static cs::extension regex_result_ext;
-static cs::extension_t regex_ext_shared = cs::make_shared_extension(regex_ext);
-static cs::extension_t regex_result_ext_shared = cs::make_shared_extension(regex_result_ext);
-namespace cs_impl {
-  template<>
-  cs::extension_t &get_ext<std::regex>()
-  {
-    return regex_ext_shared;
-  }
-  
-  template<>
-  cs::extension_t &get_ext<std::smatch>()
-  {
-    return regex_result_ext_shared;
-  }
-  
-  template<>
-  constexpr const char *get_name_of_type<std::regex>()
-  {
-    return "cs::regex";
-  }
-  
-  template<>
-  constexpr const char *get_name_of_type<std::smatch>()
-  {
-    return "cs::regex::result";
-  }
-}
-namespace regex_cs_ext {
-  using namespace cs;
-  
-  var build(const string &str)
-  {
-    return var::make<std::regex>(str);
-  }
-  
-  std::smatch match(std::regex &reg, const string &str)
-  {
-    std::smatch m;
-    std::regex_search(str, m, reg);
-    return std::move(m);
-  }
-  
-  std::smatch search(std::regex &reg, const string &str)
-  {
-    std::smatch m;
-    std::regex_search(str, m, reg);
-    return std::move(m);
-  }
-  
-  string replace(std::regex &reg, const string &str, const string &fmt)
-  {
-    return std::regex_replace(str, reg, fmt);
-  }
-  
-  bool ready(const std::smatch &m)
-  {
-    return m.ready();
-  }
-  
-  bool empty(const std::smatch &m)
-  {
-    return m.empty();
-  }
-  
-  number size(const std::smatch &m)
-  {
-    return m.size();
-  }
-  
-  number length(const std::smatch &m, number index)
-  {
-    return m.length(index);
-  }
-  
-  number position(const std::smatch &m, number index)
-  {
-    return m.position(index);
-  }
-  
-  string str(const std::smatch &m, number index)
-  {
-    return m.str(index);
-  }
-  
-  string prefix(const std::smatch &m)
-  {
-    return m.prefix().str();
-  }
-  
-  string suffix(const std::smatch &m)
-  {
-    return m.suffix().str();
-  }
-  
-  void init()
-  {
-    regex_ext.add_var("result", var::make_protect<extension_t>(regex_result_ext_shared));
-    regex_ext.add_var("build", var::make_protect<callable>(cni(build)));
-    regex_ext.add_var("match", var::make_protect<callable>(cni(match)));
-    regex_ext.add_var("search", var::make_protect<callable>(cni(search)));
-    regex_ext.add_var("replace", var::make_protect<callable>(cni(replace)));
-    regex_result_ext.add_var("ready", var::make_protect<callable>(cni(ready)));
-    regex_result_ext.add_var("empty", var::make_protect<callable>(cni(empty)));
-    regex_result_ext.add_var("size", var::make_protect<callable>(cni(size)));
-    regex_result_ext.add_var("length", var::make_protect<callable>(cni(length)));
-    regex_result_ext.add_var("position", var::make_protect<callable>(cni(position)));
-    regex_result_ext.add_var("str", var::make_protect<callable>(cni(str)));
-    regex_result_ext.add_var("prefix", var::make_protect<callable>(cni(prefix)));
-    regex_result_ext.add_var("suffix", var::make_protect<callable>(cni(suffix)));
-  }
+static cs::extension streams_ext;
+static cs::extension_t streams_ext_shared = cs::make_shared_extension(streams_ext);
+
+namespace streams {
+    using namespace cs;
+
+    struct streams_holder {
+        cs::list collection;
+    };
+
+    streams_holder of(const cs::list &list) {
+        return streams_holder{list};
+    }
+
+    streams_holder foreach(streams_holder &holder) {
+        return holder;
+    }
+
+    streams_holder skip(streams_holder &holder, number n) {
+        auto count = std::min(static_cast<int>(n),
+                              static_cast<int>(holder.collection.size()));
+        for (int i = 0; i < count; ++i) {
+            holder.collection.pop_front();
+        }
+        return holder;
+    }
+
+    streams_holder reverse(streams_holder &holder) {
+        holder.collection.reverse();
+        return holder;
+    }
+
+    number count(const streams_holder &holder) {
+        return number(holder.collection.size());
+    }
+
+    void init() {
+        streams_ext.add_var("of", var::make_protect<callable>(cni(of), true));
+        streams_ext.add_var("foreach", var::make_protect<callable>(cni(foreach), true));
+        streams_ext.add_var("count", var::make_protect<callable>(cni(count), true));
+        streams_ext.add_var("skip", var::make_protect<callable>(cni(skip), true));
+        streams_ext.add_var("reverse", var::make_protect<callable>(cni(reverse), true));
+        streams_ext.add_var("version", var::make_constant<cs::number>(1.0));
+    }
 }
 
-cs::extension *cs_extension()
-{
-  regex_cs_ext::init();
-  return &regex_ext;
+namespace cs_impl {
+    template<>
+    cs::extension_t &get_ext<streams::streams_holder>() {
+        return streams_ext_shared;
+    }
+
+    template<>
+    constexpr const char *get_name_of_type<streams::streams_holder>() {
+        return "cs::streams";
+    }
+}
+
+cs::extension *cs_extension() {
+    streams::init();
+    return &streams_ext;
 }
 

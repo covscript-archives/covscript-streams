@@ -4,7 +4,7 @@ include_directories(include)
 include_directories(../covscript/include)
 
 set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_FLAGS " -fPIE -s -O3")
+set(CMAKE_CXX_FLAGS " -fPIC -s -O3")
 
 add_library(streams SHARED streams.cpp)
 
