@@ -35,8 +35,34 @@ namespace streams {
         return streams_holder{list};
     }
 
-    streams_holder foreach(streams_holder &holder) {
+    streams_holder for_each(streams_holder &holder, callable &callable) {
+        std::for_each(holder.collection.begin(), holder.collection.end(),
+            [&callable](cs_impl::any &item) {
+                vector args = {item};
+                callable.call(args);
+            });
         return holder;
+    }
+
+    streams_holder filter(streams_holder &holder, callable &predicate) {
+        cs::list new_list;
+        std::for_each(holder.collection.begin(), holder.collection.end(),
+                      [&predicate, &new_list](cs_impl::any &item) {
+                          vector args = {item};
+                          if (predicate.call(args).const_val<boolean>()) {
+                              new_list.push_back(item);
+                          }
+                      });
+        holder.collection = new_list;
+        return holder;
+    }
+
+    streams_holder limit(streams_holder &holder) {
+        return holder;
+    }
+
+    cs::list to_list(streams_holder &holder) {
+        return holder.collection;
     }
 
     streams_holder skip(streams_holder &holder, number n) {
@@ -57,13 +83,38 @@ namespace streams {
         return number(holder.collection.size());
     }
 
+    boolean any_match(streams_holder &holder) {
+        return true;
+    }
+
+    boolean all_match(streams_holder &holder) {
+        return true;
+    }
+
+    var find_first(streams_holder &holder) {
+        if (!holder.collection.empty()) {
+            return holder.collection.front();
+        }
+        return null_pointer;
+    }
+
+    var find_any(streams_holder &holder) {
+        return find_first(holder);
+    }
+
     void init() {
         streams_ext.add_var("of", var::make_protect<callable>(cni(of), true));
-        streams_ext.add_var("foreach", var::make_protect<callable>(cni(foreach), true));
+        streams_ext.add_var("for_each", var::make_protect<callable>(cni(for_each), true));
         streams_ext.add_var("count", var::make_protect<callable>(cni(count), true));
         streams_ext.add_var("skip", var::make_protect<callable>(cni(skip), true));
         streams_ext.add_var("reverse", var::make_protect<callable>(cni(reverse), true));
-        streams_ext.add_var("version", var::make_constant<cs::number>(1.0));
+        streams_ext.add_var("filter", var::make_protect<callable>(cni(filter), true));
+        streams_ext.add_var("any_match", var::make_protect<callable>(cni(any_match), true));
+        streams_ext.add_var("all_match", var::make_protect<callable>(cni(all_match), true));
+        streams_ext.add_var("find_first", var::make_protect<callable>(cni(find_first), true));
+        streams_ext.add_var("find_any", var::make_protect<callable>(cni(find_any), true));
+        streams_ext.add_var("limit", var::make_protect<callable>(cni(limit), true));
+        streams_ext.add_var("to_list", var::make_protect<callable>(cni(to_list), true));
     }
 }
 
