@@ -31,25 +31,36 @@ namespace streams {
         cs::list collection;
     };
 
+    static var call(const var &mayCall, var &arg) {
+        if (mayCall.type() == typeid(object_method)) {
+            const auto &om = mayCall.const_val<object_method>();
+            vector args{om.object, arg};
+            return om.callable.const_val<callable>().call(args);
+        } else if (mayCall.type() == typeid(callable)) {
+            const auto &predicate = mayCall.const_val<callable>();
+            vector args = {arg};
+            return predicate.call(args);
+        }
+        return null_pointer;
+    }
+
     streams_holder of(const cs::list &list) {
         return streams_holder{list};
     }
 
-    streams_holder for_each(streams_holder &holder, callable &callable) {
+    streams_holder for_each(streams_holder &holder, callable mayCall) {
         std::for_each(holder.collection.begin(), holder.collection.end(),
-            [&callable](cs_impl::any &item) {
-                vector args = {item};
-                callable.call(args);
+            [&mayCall](cs_impl::any &item) {
+                call(mayCall, item);
             });
         return holder;
     }
 
-    streams_holder filter(streams_holder &holder, callable &predicate) {
+    streams_holder filter(streams_holder &holder, callable mayCall) {
         cs::list new_list;
         std::for_each(holder.collection.begin(), holder.collection.end(),
-                      [&predicate, &new_list](cs_impl::any &item) {
-                          vector args = {item};
-                          if (predicate.call(args).const_val<boolean>()) {
+                      [&mayCall, &new_list](cs_impl::any &item) {
+                          if (call(mayCall, item).const_val<boolean>()) {
                               new_list.push_back(item);
                           }
                       });
