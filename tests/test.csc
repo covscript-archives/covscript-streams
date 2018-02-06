@@ -7,13 +7,13 @@ function main()
     system.out.println(streams.of(list).skip(7).find_first())
 
     system.out.println("")
-    streams.of(list).for_each([] (it) -> system.out.println(it))
+    streams.of(list).for_each(system.out.println)
 
     system.out.println("")
-    streams.of(list).filter([] (it) -> it > 5).for_each([] (it) -> system.out.println(it))
+    streams.of(list).filter([] (it) -> it > 5).for_each(system.out.println)
 
     system.out.println("")
-    streams.of(list).filter([] (it) -> it > 5).reverse().for_each([] (it) -> system.out.println(it))
+    streams.of(list).filter([] (it) -> it > 5).reverse().for_each(system.out.println)
 end
 
 main()
