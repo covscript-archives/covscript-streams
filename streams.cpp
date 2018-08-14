@@ -23,7 +23,7 @@
 #define NO_LIMITS (-1)
 
 static cs::extension streams_ext;
-static cs::extension_t streams_ext_shared = cs::make_shared_extension(streams_ext);
+static cs::extension_t streams_ext_shared = cs::make_shared_namespace(streams_ext);
 
 namespace streams {
     using namespace cs;
