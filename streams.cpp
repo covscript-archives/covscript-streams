@@ -17,13 +17,11 @@
 * Email: libkernelpanic@gmail.com
 * Github: https://github.com/imkiva
 */
-#include <covscript/cni.hpp>
 #include <covscript/extension.hpp>
 
-#define NO_LIMITS (-1)
+static cs::namespace_t streams_ext=cs::make_shared_namespace<cs::name_space>();
 
-static cs::extension streams_ext;
-static cs::extension_t streams_ext_shared = cs::make_shared_namespace(streams_ext);
+#define NO_LIMITS (-1)
 
 namespace streams {
     using namespace cs;
@@ -50,19 +48,6 @@ namespace streams {
             }
         }
     };
-
-    template<typename... ArgsT>
-    var invoke(const var &func, ArgsT &&... _args) {
-        if (func.type() == typeid(callable)) {
-            vector args{std::forward<ArgsT>(_args)...};
-            return func.const_val<callable>().call(args);
-        } else if (func.type() == typeid(object_method)) {
-            const auto &om = func.const_val<object_method>();
-            vector args{om.object, std::forward<ArgsT>(_args)...};
-            return om.callable.const_val<callable>().call(args);
-        }
-        return null_pointer;
-    }
 
     streams_holder of(const cs::list &list) {
         return streams_holder{list, NO_LIMITS};
@@ -166,30 +151,47 @@ namespace streams {
         return acc;
     }
 
-    void init() {
-        streams_ext.add_var("of", var::make_protect<callable>(cni(of), true));
-        streams_ext.add_var("for_each", var::make_protect<callable>(cni(for_each), true));
-        streams_ext.add_var("peek", var::make_protect<callable>(cni(peek), true));
-        streams_ext.add_var("count", var::make_protect<callable>(cni(count), true));
-        streams_ext.add_var("skip", var::make_protect<callable>(cni(skip), true));
-        streams_ext.add_var("reverse", var::make_protect<callable>(cni(reverse), true));
-        streams_ext.add_var("filter", var::make_protect<callable>(cni(filter), true));
-        streams_ext.add_var("any_match", var::make_protect<callable>(cni(any_match), true));
-        streams_ext.add_var("all_match", var::make_protect<callable>(cni(all_match), true));
-        streams_ext.add_var("none_match", var::make_protect<callable>(cni(none_match), true));
-        streams_ext.add_var("find_first", var::make_protect<callable>(cni(find_first), true));
-        streams_ext.add_var("find_any", var::make_protect<callable>(cni(find_any), true));
-        streams_ext.add_var("limit", var::make_protect<callable>(cni(limit), true));
-        streams_ext.add_var("map", var::make_protect<callable>(cni(map), true));
-        streams_ext.add_var("reduce", var::make_protect<callable>(cni(reduce), true));
-        streams_ext.add_var("to_list", var::make_protect<callable>(cni(to_list), true));
+    void init(name_space* ns) {
+        (*ns)
+        .add_var("of", make_cni(of, true))
+        .add_var("for_each", make_cni(for_each, true))
+        .add_var("peek", make_cni(peek, true))
+        .add_var("count", make_cni(count, true))
+        .add_var("skip", make_cni(skip, true))
+        .add_var("reverse", make_cni(reverse, true))
+        .add_var("filter", make_cni(filter, true))
+        .add_var("any_match", make_cni(any_match, true))
+        .add_var("all_match", make_cni(all_match, true))
+        .add_var("none_match", make_cni(none_match, true))
+        .add_var("find_first", make_cni(find_first, true))
+        .add_var("find_any", make_cni(find_any, true))
+        .add_var("limit", make_cni(limit, true))
+        .add_var("map", make_cni(map, true))
+        .add_var("reduce", make_cni(reduce, true))
+        .add_var("to_list", make_cni(to_list, true));
+        (*streams_ext)
+        .add_var("for_each", make_cni(for_each, true))
+        .add_var("peek", make_cni(peek, true))
+        .add_var("count", make_cni(count, true))
+        .add_var("skip", make_cni(skip, true))
+        .add_var("reverse", make_cni(reverse, true))
+        .add_var("filter", make_cni(filter, true))
+        .add_var("any_match", make_cni(any_match, true))
+        .add_var("all_match", make_cni(all_match, true))
+        .add_var("none_match", make_cni(none_match, true))
+        .add_var("find_first", make_cni(find_first, true))
+        .add_var("find_any", make_cni(find_any, true))
+        .add_var("limit", make_cni(limit, true))
+        .add_var("map", make_cni(map, true))
+        .add_var("reduce", make_cni(reduce, true))
+        .add_var("to_list", make_cni(to_list, true));
     }
 }
 
 namespace cs_impl {
     template<>
-    cs::extension_t &get_ext<streams::streams_holder>() {
-        return streams_ext_shared;
+    cs::namespace_t &get_ext<streams::streams_holder>() {
+        return streams_ext;
     }
 
     template<>
@@ -198,7 +200,6 @@ namespace cs_impl {
     }
 }
 
-cs::extension *cs_extension() {
-    streams::init();
-    return &streams_ext;
+void cs_extension_main(cs::name_space* ns) {
+    streams::init(ns);
 }

@@ -8,3 +8,5 @@ build/
 *.a
 *.so
 *.cse
+# CovScript Headers
+include/covscript
