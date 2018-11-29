@@ -17,7 +17,7 @@
 * Email: libkernelpanic@gmail.com
 * Github: https://github.com/imkiva
 */
-#include <covscript/extension.hpp>
+#include <covscript/dll.hpp>
 
 static cs::namespace_t streams_ext=cs::make_shared_namespace<cs::name_space>();
 
