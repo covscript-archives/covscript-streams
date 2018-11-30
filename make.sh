@@ -21,8 +21,8 @@ function set_flag() {
     fi
 }
 
-DEFAULT_CXXFLAGS="-std=c++11 -I ../include -shared -fPIC -s -O3"
-DEFAULT_LDFLAGS="-ldl"
+DEFAULT_CXXFLAGS="-std=c++11 -I$CS_DEV_PATH/include -I../include -shared -fPIC -s -O3"
+DEFAULT_LDFLAGS="-L$CS_DEV_PATH/lib -lcovscript"
 DEFAULT_CXX=g++
 
 set_flag CXX $DEFAULT_CXX
@@ -42,4 +42,3 @@ mkdir -p build
 cd build
 mkdir -p imports
 $CXX $CXXFLAGS ../streams.cpp $LDFLAGS -o ./imports/streams.cse
-
