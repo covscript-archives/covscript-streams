@@ -13,7 +13,7 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 *
-* Copyright (C) 2018 Kiva
+* Copyright (C) 2019 Kiva
 * Email: libkernelpanic@gmail.com
 * Github: https://github.com/imkiva
 */
