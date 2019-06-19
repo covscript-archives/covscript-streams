@@ -10,3 +10,6 @@ build/
 *.cse
 # CovScript Headers
 include/covscript
+
+.vscode/
+cmake-build/
