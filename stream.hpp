@@ -10,7 +10,7 @@
 
 namespace imkiva {
     template <class A, class B, class C>
-    static std::function<A(C)> compose(const std::function<C(B)> &f,
+    static std::function<C(A)> compose(const std::function<C(B)> &f,
                                        const std::function<B(A)> &g) {
         return std::bind(f, std::bind(g, std::placeholders::_1));
     }
