@@ -40,9 +40,9 @@ namespace imkiva {
 
             T last = _evaluatedIndex > 0 ? _evaluated[_evaluatedIndex] : _source;
             while (_evaluatedIndex < toIndex) {
-                T p_last_value = _mapper(last);
-                if (_predicate(p_last_value)) {
-                    _evaluated.push_back(p_last_value);
+                T mapped = _mapper(last);
+                if (_predicate(mapped)) {
+                    _evaluated.push_back(mapped);
                     ++_evaluatedIndex;
                 }
                 last = _producer(last);
