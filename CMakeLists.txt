@@ -32,7 +32,7 @@ else ()
     set(CMAKE_CXX_FLAGS "-fPIC -O3")
 endif ()
 
-add_library(streams SHARED streams-ext.cpp thunk.hpp)
+add_library(streams SHARED streams-ext.cpp thunk.hpp stream.hpp)
 
 target_link_libraries(streams covscript)
 
