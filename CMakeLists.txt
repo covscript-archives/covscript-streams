@@ -39,3 +39,5 @@ target_link_libraries(streams covscript)
 set_target_properties(streams PROPERTIES OUTPUT_NAME streams)
 set_target_properties(streams PROPERTIES PREFIX "")
 set_target_properties(streams PROPERTIES SUFFIX ".cse")
+
+add_executable(test-cpp-stream tests/test-stream-cpp.cpp)

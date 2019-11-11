@@ -5,7 +5,7 @@
 
 #include <functional>
 
-namespace streams {
+namespace imkiva {
     template <typename T>
     class Thunk {
     public:
