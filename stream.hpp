@@ -64,36 +64,36 @@ namespace imkiva {
 
         ~Stream() = default;
 
-        Stream &operator=(const Stream<T> &rhs) {
+        Stream<T> &operator=(const Stream<T> &rhs) {
             // Copyright (c) 2019 mikecovlee
             this->~Stream();
             new(this) Stream(rhs);
             return *this;
         }
 
-        Stream &iterate(const Mapper &one) {
+        Stream<T> &iterate(const Mapper &one) {
             this->_producer = compose<T, T, T>(one, this->_producer);
             return *this;
         }
 
-        Stream &filter(const Predicate &predicate) {
+        Stream<T> &filter(const Predicate &predicate) {
             this->_predicate = booleanCompose<T>(predicate, this->_predicate);
             return *this;
         }
 
-        Stream &map(const Mapper &mapper) {
+        Stream<T> &map(const Mapper &mapper) {
             this->_mapper = compose<T, T, T>(mapper, this->_mapper);
             return *this;
         }
 
-        Stream &drop(int n) {
+        Stream<T> &drop(int n) {
             while (n-- > 0) {
                 dropHead();
             }
             return *this;
         }
 
-        Stream &dropWhile(const Predicate &predicate) {
+        Stream<T> &dropWhile(const Predicate &predicate) {
             return filter([=](T x) { return !predicate(x); });
         }
 
@@ -116,7 +116,7 @@ namespace imkiva {
             return std::move(values);
         }
 
-        Stream &tail() {
+        Stream<T> &tail() {
             dropHead();
             return *this;
         }
@@ -126,7 +126,7 @@ namespace imkiva {
         }
 
     public:
-        static Stream repeat(const T &head) {
+        static Stream<T> repeat(const T &head) {
             return Stream<T>(head);
         }
     };
