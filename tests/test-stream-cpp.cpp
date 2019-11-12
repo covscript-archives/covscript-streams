@@ -7,8 +7,7 @@
 
 int main() {
     using namespace imkiva;
-    auto s = Stream<int>::repeat(1)
-        .iterate([](int x) { return x * 2; })
+    auto s = Stream<int>::iterate(1, [](int x) { return x * 2; })
         .map([](int x) { return x - 1; })
         .filter([](int x) { return x > 1000; })
         .dropWhile([](int x) { return x <= 1000; })

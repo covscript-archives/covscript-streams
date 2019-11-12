@@ -88,7 +88,6 @@ namespace imkiva {
         Stream<R> map(const Mapper<R> &mapper) {
             // TODO: construct a new Stream<R>
             assert(false);
-
         }
 
         Stream<T> &map(const Mapper<T> &mapper) {
@@ -126,18 +125,41 @@ namespace imkiva {
             return std::move(values);
         }
 
+        /**
+         * Drop the first element
+         * @return Stream containing the rest elements
+         */
         Stream<T> &tail() {
             dropHead();
             return *this;
         }
 
+        /**
+         * Take the first element of the Stream
+         * @return the first element
+         */
         T head() {
             return evalHead();
         }
 
     public:
+        /**
+         * Construct a stream by repeating a value.
+         * @param head
+         * @return Stream
+         */
         static Stream<T> repeat(const T &head) {
             return Stream<T>(head);
+        }
+
+        /**
+         * Construct a stream by repeatedly applying a function.
+         * @param head The first element
+         * @param iterator The mapper function
+         * @return Stream
+         */
+        static Stream<T> iterate(T head, const Producer &iterator) {
+            return Stream<T>::repeat(head).iterate(iterator);
         }
     };
 }
