@@ -23,15 +23,18 @@ namespace imkiva {
     template <class T>
     class Stream {
     public:
-        using Predicate = std::function<bool(T)>;
-        using Mapper = std::function<T(T x)>;
+        template <typename R>
+        using Mapper = std::function<R(T x)>;
+
+        using Predicate = Mapper<bool>;
+        using Producer = Mapper<T>;
 
     private:
         T _head;
 
-        std::function<T(T x)> _producer;
+        Producer _producer;
         Predicate _predicate;
-        Mapper _mapper;
+        Mapper<T> _mapper;
 
     private:
         T takeHead() {
@@ -71,8 +74,8 @@ namespace imkiva {
             return *this;
         }
 
-        Stream<T> &iterate(const Mapper &one) {
-            this->_producer = compose<T, T, T>(one, this->_producer);
+        Stream<T> &iterate(const Producer &iterator) {
+            this->_producer = compose<T, T, T>(iterator, this->_producer);
             return *this;
         }
 
@@ -81,7 +84,14 @@ namespace imkiva {
             return *this;
         }
 
-        Stream<T> &map(const Mapper &mapper) {
+        template <typename R>
+        Stream<R> map(const Mapper<R> &mapper) {
+            // TODO: construct a new Stream<R>
+            assert(false);
+
+        }
+
+        Stream<T> &map(const Mapper<T> &mapper) {
             this->_mapper = compose<T, T, T>(mapper, this->_mapper);
             return *this;
         }
