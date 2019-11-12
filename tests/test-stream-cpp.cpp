@@ -19,11 +19,11 @@ int main() {
         printf("%d\n", i);
     }
 
-    auto f = Stream<int>::repeat(1)
-        .iterate([](int x) { return x + 1; })
-        .map([](int x) -> std::string { return std::to_string(x) + ": stream map";})
-        .take(10);
-    for (auto i : f) {
-        printf("%s\n", i.c_str());
-    }
+//    auto f = Stream<int>::repeat(1)
+//        .iterate([](int x) { return x + 1; })
+//        .map([](int x) -> std::string { return std::to_string(x) + ": stream map";})
+//        .take(10);
+//    for (auto i : f) {
+//        printf("%s\n", i.c_str());
+//    }
 }

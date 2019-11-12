@@ -43,7 +43,7 @@ namespace imkiva {
             return std::move(head);
         }
 
-        T next() {
+        T evalHead() {
             T mapped = _mapper(takeHead());
             while (!_predicate(mapped)) {
                 mapped = _mapper(takeHead());
@@ -52,7 +52,7 @@ namespace imkiva {
         }
 
         void dropHead() {
-            (void) next();
+            (void) evalHead();
         }
 
         explicit Stream(const T &seed)
@@ -111,17 +111,17 @@ namespace imkiva {
             std::vector<T> values;
             values.reserve(n);
             while (n-- > 0) {
-                values.emplace_back(next());
+                values.emplace_back(evalHead());
             }
             return std::move(values);
         }
 
         std::vector<T> takeWhile(const Predicate &predicate) {
             std::vector<T> values;
-            T head = next();
+            T head = evalHead();
             while (predicate(head)) {
                 values.emplace_back(std::move(head));
-                head = next();
+                head = evalHead();
             }
             return std::move(values);
         }
@@ -132,7 +132,7 @@ namespace imkiva {
         }
 
         T head() {
-            return next();
+            return evalHead();
         }
 
     public:
