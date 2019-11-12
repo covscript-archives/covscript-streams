@@ -6,7 +6,6 @@
 
 #include <vector>
 #include <functional>
-#include "thunk.hpp"
 
 namespace imkiva {
     template <class A, class B, class C>
@@ -24,34 +23,25 @@ namespace imkiva {
     template <class T>
     class Stream {
     private:
-        std::vector<T> _evaluated;
-        int _evaluatedIndex;
-        const T &_source;
+        T _head;
 
         std::function<T(T x)> _producer;
         std::function<bool(T x)> _predicate;
         std::function<T(T x)> _mapper;
 
     private:
-        void eval(int toIndex) {
-            if (_evaluatedIndex >= toIndex) {
-                return;
-            }
+        T takeHead() {
+            T head = _head;
+            _head = _producer(_head);
+            return std::move(head);
+        }
 
-            T last = _evaluatedIndex > 0 ? _evaluated[_evaluatedIndex] : _source;
-            while (_evaluatedIndex < toIndex) {
-                T mapped = _mapper(last);
-                if (_predicate(mapped)) {
-                    _evaluated.push_back(mapped);
-                    ++_evaluatedIndex;
-                }
-                last = _producer(last);
-            }
+        void dropHead() {
+            _head = _producer(_head);
         }
 
         explicit Stream(const T &seed)
-            : _source(seed),
-              _evaluatedIndex(0),
+            : _head(seed),
               _producer([](T x) { return x; }),
               _predicate([](T x) { return true; }),
               _mapper([](T x) { return x; }) {
@@ -69,10 +59,6 @@ namespace imkiva {
             return *this;
         }
 
-        static Stream from(const T &source) {
-            return Stream<T>(source);
-        }
-
         Stream &iterate(const std::function<T(T x)> &one) {
             this->_producer = compose<T, T, T>(one, this->_producer);
             return *this;
@@ -88,10 +74,37 @@ namespace imkiva {
             return *this;
         }
 
+        Stream &drop(int n) {
+            while (n-- > 0) {
+                dropHead();
+            }
+            return *this;
+        }
+
+        Stream &tail() {
+            dropHead();
+            return *this;
+        }
+
+        T head() {
+            return takeHead();
+        }
+
         std::vector<T> take(int n) {
-            eval(n);
-            std::vector<T> values(_evaluated.begin(), _evaluated.begin() + n);
+            std::vector<T> values;
+            values.reserve(n);
+            while (n-- > 0) {
+                T mapped = _mapper(takeHead());
+                if (_predicate(mapped)) {
+                    values.emplace_back(std::move(mapped));
+                }
+            }
             return std::move(values);
+        }
+
+    public:
+        static Stream repeat(const T &head) {
+            return Stream<T>(head);
         }
     };
 }
