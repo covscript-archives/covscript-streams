@@ -55,8 +55,8 @@ namespace imkiva {
             (void) evalHead();
         }
 
-        explicit Stream(const T &seed)
-            : _head(seed),
+        explicit Stream(const T &head)
+            : _head(head),
               _producer([](T x) { return x; }),
               _predicate([](T x) { return true; }),
               _mapper([](T x) { return x; }) {
