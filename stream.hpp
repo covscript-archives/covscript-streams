@@ -22,12 +22,16 @@ namespace imkiva {
 
     template <class T>
     class Stream {
+    public:
+        using Predicate = std::function<bool(T)>;
+        using Mapper = std::function<T(T x)>;
+
     private:
         T _head;
 
         std::function<T(T x)> _producer;
-        std::function<bool(T x)> _predicate;
-        std::function<T(T x)> _mapper;
+        Predicate _predicate;
+        Mapper _mapper;
 
     private:
         T takeHead() {
@@ -36,8 +40,16 @@ namespace imkiva {
             return std::move(head);
         }
 
+        T next() {
+            T mapped = _mapper(takeHead());
+            while (!_predicate(mapped)) {
+                mapped = _mapper(takeHead());
+            }
+            return std::move(mapped);
+        }
+
         void dropHead() {
-            _head = _producer(_head);
+            (void) next();
         }
 
         explicit Stream(const T &seed)
@@ -59,17 +71,17 @@ namespace imkiva {
             return *this;
         }
 
-        Stream &iterate(const std::function<T(T x)> &one) {
+        Stream &iterate(const Mapper &one) {
             this->_producer = compose<T, T, T>(one, this->_producer);
             return *this;
         }
 
-        Stream &filter(const std::function<bool(T x)> &predicate) {
+        Stream &filter(const Predicate &predicate) {
             this->_predicate = booleanCompose<T>(predicate, this->_predicate);
             return *this;
         }
 
-        Stream &map(const std::function<T(T x)> &mapper) {
+        Stream &map(const Mapper &mapper) {
             this->_mapper = compose<T, T, T>(mapper, this->_mapper);
             return *this;
         }
@@ -81,25 +93,36 @@ namespace imkiva {
             return *this;
         }
 
-        Stream &tail() {
-            dropHead();
-            return *this;
-        }
-
-        T head() {
-            return takeHead();
+        Stream &dropWhile(const Predicate &predicate) {
+            return filter([=](T x) { return !predicate(x); });
         }
 
         std::vector<T> take(int n) {
             std::vector<T> values;
             values.reserve(n);
             while (n-- > 0) {
-                T mapped = _mapper(takeHead());
-                if (_predicate(mapped)) {
-                    values.emplace_back(std::move(mapped));
-                }
+                values.emplace_back(next());
             }
             return std::move(values);
+        }
+
+        std::vector<T> takeWhile(const Predicate &predicate) {
+            std::vector<T> values;
+            T head = next();
+            while (predicate(head)) {
+                values.emplace_back(std::move(head));
+                head = next();
+            }
+            return std::move(values);
+        }
+
+        Stream &tail() {
+            dropHead();
+            return *this;
+        }
+
+        T head() {
+            return next();
         }
 
     public:
