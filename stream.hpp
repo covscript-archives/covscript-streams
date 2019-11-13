@@ -148,6 +148,24 @@ namespace imkiva {
             return *this;
         }
 
+        Stream<T> &peek(const Consumer &consumer) {
+            if (_remaining) {
+                T head = evalHead();
+                while (_predicate(head)) {
+                    consumer(head);
+                    if (!_remaining) {
+                        break;
+                    }
+                    head = evalHead();
+                }
+            }
+            return *this;
+        }
+
+        Stream<T> takeWhile(const Predicate &predicate) {
+            return Stream<T>::of(takeList(predicate));
+        }
+
         std::vector<T> take(int n) {
             std::vector<T> values;
             values.reserve(n);
@@ -155,10 +173,6 @@ namespace imkiva {
                 values.emplace_back(evalHead());
             }
             return std::move(values);
-        }
-
-        Stream<T> takeWhile(const Predicate &predicate) {
-            return Stream<T>::of(takeList(predicate));
         }
 
         std::vector<T> collect() {
@@ -193,22 +207,17 @@ namespace imkiva {
             return ts[0];
         }
 
-        Stream<T> &peek(const Consumer &consumer) {
-            if (_remaining) {
-                T head = evalHead();
-                while (_predicate(head)) {
-                    consumer(head);
-                    if (!_remaining) {
-                        break;
-                    }
-                    head = evalHead();
-                }
-            }
-            return *this;
-        }
-
         void forEach(const Consumer &consumer) {
             peek(consumer);
+        }
+
+        template <typename U>
+        U foldr(U identity, const std::function<U(U, T)> &f) {
+            U acc = identity;
+            forEach([&](T t) {
+                acc = f(acc, t);
+            });
+            return acc;
         }
 
     public:

@@ -43,4 +43,13 @@ int main() {
             printf("%d\n", i);
         }
     }
+
+    {
+        printf("== Testing foldr finite Stream\n");
+        std::vector<int> v{1, 2, 3, 4, 5};
+        int r = Stream<int>::of(v)
+            .map([](int x) { return x * x; })
+            .foldr<int>(0, [](int acc, int e) { return acc + e; });
+        assert(r == (1 + 4 + 9 + 16 + 25));
+    }
 }
