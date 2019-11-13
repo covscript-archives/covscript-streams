@@ -217,7 +217,7 @@ namespace imkiva {
             peek(consumer);
         }
 
-        template <typename U>
+        template <typename U = T>
         U reduce(U identity, const std::function<U(U, T)> &f) {
             U acc = identity;
             forEach([&](T t) {
