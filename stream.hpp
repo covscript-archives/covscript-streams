@@ -148,18 +148,24 @@ namespace imkiva {
             return *this;
         }
 
-        Stream<T> &peek(const Consumer &consumer) {
+        Stream<T> &go(const Predicate &predicate) {
             if (_remaining) {
                 T head = evalHead();
                 while (_predicate(head)) {
-                    consumer(head);
-                    if (!_remaining) {
+                    if (!predicate(head) || !_remaining) {
                         break;
                     }
                     head = evalHead();
                 }
             }
             return *this;
+        }
+
+        Stream<T> &peek(const Consumer &consumer) {
+            return go([&](T t) {
+                consumer(t);
+                return true;
+            });
         }
 
         Stream<T> takeWhile(const Predicate &predicate) {
@@ -218,6 +224,25 @@ namespace imkiva {
                 acc = f(acc, t);
             });
             return acc;
+        }
+
+        bool any(const Predicate &predicate) {
+            bool match = false;
+            go([&](T t) {
+                if (predicate(t)) {
+                    match = true;
+                }
+                return !match;
+            });
+            return match;
+        }
+
+        bool none(const Predicate &predicate) {
+            return any([&](T x) { return !predicate(x); });
+        }
+
+        bool all(const Predicate &predicate) {
+            return !none(predicate);
         }
 
     public:
