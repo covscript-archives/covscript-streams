@@ -10,12 +10,20 @@ int main() {
 
     {
         printf("== Testing infinite Stream\n");
+        // head \
+        //  $ takeWhile (<=5000000) \
+        //  $ drop 5 \
+        //  $ dropWhile (<=100000) \
+        //  $ filter (>1000) \
+        //  $ map (\x -> x - 1) \
+        //  $ iterate (*2) 1
+
         Stream<int>::iterate(1, [](int x) { return x * 2; })
             .map([](int x) { return x - 1; })
             .filter([](int x) { return x > 1000; })
-            .dropWhile([](int x) { return x <= 1000; })
+            .dropWhile([](int x) { return x <= 100000; })
             .drop(5)
-            .takeWhile([](int x) { return x <= 300000; })
+            .takeWhile([](int x) { return x <= 5000000; })
             .forEach([](int x) { printf("%d\n", x); });
     }
 
