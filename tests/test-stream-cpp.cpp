@@ -7,22 +7,40 @@
 
 int main() {
     using namespace imkiva;
-    auto s = Stream<int>::iterate(1, [](int x) { return x * 2; })
-        .map([](int x) { return x - 1; })
-        .filter([](int x) { return x > 1000; })
-        .dropWhile([](int x) { return x <= 1000; })
-        .drop(5)
-        .takeWhile([](int x) { return x <= 300000; });
-    printf("size: %zd\n", s.size());
-    for (int i : s) {
-        printf("%d\n", i);
+
+    {
+        printf("== Testing infinite Stream\n");
+        Stream<int>::iterate(1, [](int x) { return x * 2; })
+            .map([](int x) { return x - 1; })
+            .filter([](int x) { return x > 1000; })
+            .dropWhile([](int x) { return x <= 1000; })
+            .drop(5)
+            .takeWhile([](int x) { return x <= 300000; })
+            .forEach([](int x) { printf("%d\n", x); });
     }
 
-//    auto f = Stream<int>::repeat(1)
-//        .iterate([](int x) { return x + 1; })
-//        .map([](int x) -> std::string { return std::to_string(x) + ": stream map";})
-//        .take(10);
-//    for (auto i : f) {
-//        printf("%s\n", i.c_str());
-//    }
+    {
+        printf("== Testing finite Stream\n");
+        std::vector<int> v{1, 2, 3, 4, 5};
+        std::vector<int> f = Stream<int>::of(v)
+            .map([](int x) { return x * x; })
+            .collect();
+        for (int i : f) {
+            printf("%d\n", i);
+        }
+    }
+
+    {
+        printf("== Testing dropping finite Stream\n");
+        std::vector<int> v{1, 2, 3, 4, 5};
+        std::vector<int> f = Stream<int>::of(v)
+            .map([](int x) { return x * x; })
+            .drop(4)
+            .tail()
+            .collect();
+        assert(f.empty());
+        for (int i : f) {
+            printf("%d\n", i);
+        }
+    }
 }

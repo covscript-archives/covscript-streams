@@ -5,6 +5,7 @@
 #pragma once
 
 #include <vector>
+#include <deque>
 #include <functional>
 
 namespace imkiva {
@@ -28,9 +29,12 @@ namespace imkiva {
 
         using Predicate = Mapper<bool>;
         using Producer = Mapper<T>;
+        using Consumer = Mapper<void>;
 
     private:
         T _head;
+        std::deque<T> _finite;
+        bool _remaining = true;
 
         Producer _producer;
         Predicate _predicate;
@@ -39,7 +43,9 @@ namespace imkiva {
     private:
         T takeHead() {
             T head = _head;
-            _head = _producer(_head);
+            if (_remaining) {
+                _head = _producer(_head);
+            }
             return std::move(head);
         }
 
@@ -55,11 +61,51 @@ namespace imkiva {
             (void) evalHead();
         }
 
+        Stream<T> &iterate(const Producer &iterator) {
+            this->_producer = compose<T, T, T>(iterator, this->_producer);
+            return *this;
+        }
+
+        std::vector<T> takeList(const Predicate &predicate) {
+            std::vector<T> values;
+            if (_remaining) {
+                T head = evalHead();
+                while (predicate(head)) {
+                    values.emplace_back(std::move(head));
+                    if (!_remaining) {
+                        break;
+                    }
+                    head = evalHead();
+                }
+            }
+            return std::move(values);
+        }
+
         explicit Stream(const T &head)
             : _head(head),
+              _remaining(true),
               _producer([](T x) { return x; }),
               _predicate([](T x) { return true; }),
               _mapper([](T x) { return x; }) {
+        }
+
+        explicit Stream(std::deque<T> list)
+            : _head(),
+              _finite(std::move(list)),
+              _remaining(!_finite.empty()),
+              _predicate([](T x) { return true; }),
+              _mapper([](T x) { return x; }),
+              _producer([this](T head) {
+                  if (this->_finite.empty()) {
+                      this->_remaining = false;
+                      return head;
+                  }
+                  T x = this->_finite.front();
+                  this->_finite.pop_front();
+                  return x;
+              }) {
+            // Bind the head to the first element of list
+            dropHead();
         }
 
     public:
@@ -74,13 +120,17 @@ namespace imkiva {
             return *this;
         }
 
-        Stream<T> &iterate(const Producer &iterator) {
-            this->_producer = compose<T, T, T>(iterator, this->_producer);
+        Stream<T> &filter(const Predicate &predicate) {
+            this->_predicate = booleanCompose<T>(predicate, this->_predicate);
             return *this;
         }
 
-        Stream<T> &filter(const Predicate &predicate) {
-            this->_predicate = booleanCompose<T>(predicate, this->_predicate);
+        Stream<T> &dropWhile(const Predicate &predicate) {
+            return filter([=](T x) { return !predicate(x); });
+        }
+
+        Stream<T> &map(const Mapper<T> &mapper) {
+            this->_mapper = compose<T, T, T>(mapper, this->_mapper);
             return *this;
         }
 
@@ -90,39 +140,29 @@ namespace imkiva {
             assert(false);
         }
 
-        Stream<T> &map(const Mapper<T> &mapper) {
-            this->_mapper = compose<T, T, T>(mapper, this->_mapper);
-            return *this;
-        }
-
+    public:
         Stream<T> &drop(int n) {
-            while (n-- > 0) {
+            while (_remaining && n-- > 0) {
                 dropHead();
             }
             return *this;
         }
 
-        Stream<T> &dropWhile(const Predicate &predicate) {
-            return filter([=](T x) { return !predicate(x); });
-        }
-
         std::vector<T> take(int n) {
             std::vector<T> values;
             values.reserve(n);
-            while (n-- > 0) {
+            while (_remaining && n-- > 0) {
                 values.emplace_back(evalHead());
             }
             return std::move(values);
         }
 
-        std::vector<T> takeWhile(const Predicate &predicate) {
-            std::vector<T> values;
-            T head = evalHead();
-            while (predicate(head)) {
-                values.emplace_back(std::move(head));
-                head = evalHead();
-            }
-            return std::move(values);
+        Stream<T> takeWhile(const Predicate &predicate) {
+            return Stream<T>::of(takeList(predicate));
+        }
+
+        std::vector<T> collect() {
+            return takeList([](T) { return true; });
         }
 
         /**
@@ -130,8 +170,7 @@ namespace imkiva {
          * @return Stream containing the rest elements
          */
         Stream<T> &tail() {
-            dropHead();
-            return *this;
+            return drop(1);
         }
 
         /**
@@ -139,7 +178,32 @@ namespace imkiva {
          * @return the first element
          */
         T head() {
-            return evalHead();
+            return take(1)[0];
+        }
+
+        /**
+         * Take the first element of the Stream
+         * @return the first element
+         */
+        T headOr(T backup) {
+            auto &&ts = take(1);
+            if (ts.empty()) {
+                return backup;
+            }
+            return ts[0];
+        }
+
+        void forEach(const Consumer &consumer) {
+            if (_remaining) {
+                T head = evalHead();
+                while (_predicate(head)) {
+                    consumer(head);
+                    if (!_remaining) {
+                        break;
+                    }
+                    head = evalHead();
+                }
+            }
         }
 
     public:
@@ -160,6 +224,17 @@ namespace imkiva {
          */
         static Stream<T> iterate(T head, const Producer &iterator) {
             return Stream<T>::repeat(head).iterate(iterator);
+        }
+
+        /**
+         * Construct a stream from a list.
+         * @param list The list
+         * @return Stream
+         */
+        static Stream<T> of(const std::vector<T> &list) {
+            std::deque<T> d;
+            std::copy(list.begin(), list.end(), std::back_inserter(d));
+            return Stream<T>(std::move(d));
         }
     };
 }
