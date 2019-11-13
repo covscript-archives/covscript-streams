@@ -66,21 +66,6 @@ namespace imkiva {
             return *this;
         }
 
-        std::vector<T> takeList(const Predicate &predicate) {
-            std::vector<T> values;
-            if (_remaining) {
-                T head = evalHead();
-                while (predicate(head)) {
-                    values.emplace_back(std::move(head));
-                    if (!_remaining) {
-                        break;
-                    }
-                    head = evalHead();
-                }
-            }
-            return std::move(values);
-        }
-
         explicit Stream(const T &head)
             : _head(head),
               _remaining(true),
@@ -161,6 +146,21 @@ namespace imkiva {
             return *this;
         }
 
+        std::vector<T> takeAll(const Predicate &predicate) {
+            std::vector<T> values;
+            if (_remaining) {
+                T head = evalHead();
+                while (predicate(head)) {
+                    values.emplace_back(std::move(head));
+                    if (!_remaining) {
+                        break;
+                    }
+                    head = evalHead();
+                }
+            }
+            return std::move(values);
+        }
+
         Stream<T> &peek(const Consumer &consumer) {
             return go([&](T t) {
                 consumer(t);
@@ -169,7 +169,7 @@ namespace imkiva {
         }
 
         Stream<T> takeWhile(const Predicate &predicate) {
-            return Stream<T>::of(takeList(predicate));
+            return Stream<T>::of(takeAll(predicate));
         }
 
         std::vector<T> take(int n) {
@@ -182,7 +182,7 @@ namespace imkiva {
         }
 
         std::vector<T> collect() {
-            return takeList([](T) { return true; });
+            return takeAll([](T) { return true; });
         }
 
         /**
@@ -243,6 +243,14 @@ namespace imkiva {
 
         bool all(const Predicate &predicate) {
             return !none(predicate);
+        }
+
+        size_t count(const Predicate &predicate) {
+            return takeAll(predicate).size();
+        }
+
+        size_t count() {
+            return collect().size();
         }
 
     public:
