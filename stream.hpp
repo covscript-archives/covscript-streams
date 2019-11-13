@@ -193,7 +193,7 @@ namespace imkiva {
             return ts[0];
         }
 
-        void forEach(const Consumer &consumer) {
+        Stream<T> &peek(const Consumer &consumer) {
             if (_remaining) {
                 T head = evalHead();
                 while (_predicate(head)) {
@@ -204,6 +204,11 @@ namespace imkiva {
                     head = evalHead();
                 }
             }
+            return *this;
+        }
+
+        void forEach(const Consumer &consumer) {
+            peek(consumer);
         }
 
     public:
