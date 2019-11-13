@@ -218,7 +218,7 @@ namespace imkiva {
         }
 
         template <typename U>
-        U foldr(U identity, const std::function<U(U, T)> &f) {
+        U reduce(U identity, const std::function<U(U, T)> &f) {
             U acc = identity;
             forEach([&](T t) {
                 acc = f(acc, t);

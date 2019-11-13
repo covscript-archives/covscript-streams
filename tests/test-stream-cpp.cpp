@@ -53,11 +53,11 @@ int main() {
     }
 
     {
-        printf("== Testing finite Stream: foldr()\n");
+        printf("== Testing finite Stream: reduce()\n");
         std::vector<int> v{1, 2, 3, 4, 5};
         int r = Stream<int>::of(v)
             .map([](int x) { return x * x; })
-            .foldr<int>(0, [](int acc, int e) { return acc + e; });
+            .reduce<int>(0, [](int acc, int e) { return acc + e; });
         assert(r == (1 + 4 + 9 + 16 + 25));
     }
 
