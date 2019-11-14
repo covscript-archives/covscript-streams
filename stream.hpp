@@ -6,6 +6,7 @@
 
 #include <vector>
 #include <deque>
+#include <list>
 #include <functional>
 
 namespace imkiva {
@@ -279,6 +280,28 @@ namespace imkiva {
          * @return Stream
          */
         static Stream<T> of(const std::vector<T> &list) {
+            std::deque<T> d;
+            std::copy(list.begin(), list.end(), std::back_inserter(d));
+            return Stream<T>(std::move(d));
+        }
+
+        /**
+         * Construct a stream from a list.
+         * @param list The list
+         * @return Stream
+         */
+        static Stream<T> of(const std::list<T> &list) {
+            std::deque<T> d;
+            std::copy(list.begin(), list.end(), std::back_inserter(d));
+            return Stream<T>(std::move(d));
+        }
+
+        /**
+        * Construct a stream from a list.
+        * @param list The list
+        * @return Stream
+        */
+        static Stream<T> of(const std::deque<T> &list) {
             std::deque<T> d;
             std::copy(list.begin(), list.end(), std::back_inserter(d));
             return Stream<T>(std::move(d));
