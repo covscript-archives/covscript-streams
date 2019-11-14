@@ -116,6 +116,16 @@ namespace streams {
             });
     }
 
+    StreamType take(StreamType &holder, number n) {
+        return StreamType::of(holder.take(static_cast<int>(n)));
+    }
+
+    StreamType take_while(StreamType &holder, const var &predicate) {
+        return holder.takeWhile([&predicate](const var &v) {
+            return invoke(predicate, v).val<bool>();
+        });
+    }
+
     void init(name_space *ns) {
         (*ns)
             .add_var("of", make_cni(of, true))
@@ -133,6 +143,8 @@ namespace streams {
             .add_var("find_any", make_cni(find_any, true))
             .add_var("map", make_cni(map, true))
             .add_var("reduce", make_cni(reduce, true))
+            .add_var("take", make_cni(take, true))
+            .add_var("take_while", make_cni(take_while, true))
             .add_var("to_list", make_cni(to_list, true));
         (*streams_ext)
             .add_var("for_each", make_cni(for_each, true))
@@ -147,6 +159,8 @@ namespace streams {
             .add_var("find_any", make_cni(find_any, true))
             .add_var("map", make_cni(map, true))
             .add_var("reduce", make_cni(reduce, true))
+            .add_var("take", make_cni(take, true))
+            .add_var("take_while", make_cni(take_while, true))
             .add_var("to_list", make_cni(to_list, true));
     }
 }

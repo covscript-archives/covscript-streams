@@ -15,6 +15,7 @@ echo(
         .map([](x) -> x - 1)
         .filter([](x) -> x >= 100000)
         .skip(5)
-        .find_first()
+        .take_while([](x) -> x <= 5000000)
+        .for_each(system.out.println)
 )
 @end
