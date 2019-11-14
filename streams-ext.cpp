@@ -119,6 +119,8 @@ namespace streams {
     void init(name_space *ns) {
         (*ns)
             .add_var("of", make_cni(of, true))
+            .add_var("iterate", make_cni(iterate, true))
+            .add_var("repeat", make_cni(repeat, true))
             .add_var("for_each", make_cni(for_each, true))
             .add_var("peek", make_cni(peek, true))
             .add_var("count", make_cni(count, true))

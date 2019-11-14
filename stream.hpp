@@ -34,18 +34,33 @@ namespace imkiva {
 
     private:
         T _head;
-        std::deque<T> _finite;
+        std::deque<T> _finiteData;
         bool _remaining = true;
+        bool _finiteStream = false;
 
         Producer _producer;
         Predicate _predicate;
         Mapper<T> _mapper;
 
     private:
+        T produceNext(const T &head) {
+            if (_finiteStream) {
+                if (this->_finiteData.empty()) {
+                    this->_remaining = false;
+                    return head;
+                }
+                T x = this->_finiteData.front();
+                this->_finiteData.pop_front();
+                return x;
+            } else {
+                return _producer(head);
+            }
+        }
+
         T takeHead() {
             T head = _head;
             if (_remaining) {
-                _head = _producer(_head);
+                _head = produceNext(_head);
             }
             return std::move(head);
         }
@@ -70,6 +85,7 @@ namespace imkiva {
         explicit Stream(const T &head)
             : _head(head),
               _remaining(true),
+              _finiteStream(false),
               _producer([](T x) { return x; }),
               _predicate([](T x) { return true; }),
               _mapper([](T x) { return x; }) {
@@ -77,19 +93,12 @@ namespace imkiva {
 
         explicit Stream(std::deque<T> list)
             : _head(),
-              _finite(std::move(list)),
-              _remaining(!_finite.empty()),
+              _finiteData(std::move(list)),
+              _finiteStream(true),
+              _remaining(!_finiteData.empty()),
+              _producer([](T x) { return x; }),
               _predicate([](T x) { return true; }),
-              _mapper([](T x) { return x; }),
-              _producer([this](T head) {
-                  if (this->_finite.empty()) {
-                      this->_remaining = false;
-                      return head;
-                  }
-                  T x = this->_finite.front();
-                  this->_finite.pop_front();
-                  return x;
-              }) {
+              _mapper([](T x) { return x; }) {
             // Bind the head to the first element of list
             dropHead();
         }
