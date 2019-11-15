@@ -4,9 +4,10 @@
 
 #pragma once
 
+#include <functional>
 #include <vector>
 #include <deque>
-#include <functional>
+#include <list>
 
 namespace imkiva {
     template <class A, class B, class C>
@@ -33,18 +34,33 @@ namespace imkiva {
 
     private:
         T _head;
-        std::deque<T> _finite;
+        std::deque<T> _finiteData;
         bool _remaining = true;
+        bool _finiteStream = false;
 
         Producer _producer;
         Predicate _predicate;
         Mapper<T> _mapper;
 
     private:
+        T produceNext(const T &head) {
+            if (_finiteStream) {
+                if (this->_finiteData.empty()) {
+                    this->_remaining = false;
+                    return head;
+                }
+                T x = this->_finiteData.front();
+                this->_finiteData.pop_front();
+                return x;
+            } else {
+                return _producer(head);
+            }
+        }
+
         T takeHead() {
             T head = _head;
             if (_remaining) {
-                _head = _producer(_head);
+                _head = produceNext(_head);
             }
             return std::move(head);
         }
@@ -69,6 +85,7 @@ namespace imkiva {
         explicit Stream(const T &head)
             : _head(head),
               _remaining(true),
+              _finiteStream(false),
               _producer([](T x) { return x; }),
               _predicate([](T x) { return true; }),
               _mapper([](T x) { return x; }) {
@@ -76,19 +93,12 @@ namespace imkiva {
 
         explicit Stream(std::deque<T> list)
             : _head(),
-              _finite(std::move(list)),
-              _remaining(!_finite.empty()),
+              _finiteData(std::move(list)),
+              _finiteStream(true),
+              _remaining(!_finiteData.empty()),
+              _producer([](T x) { return x; }),
               _predicate([](T x) { return true; }),
-              _mapper([](T x) { return x; }),
-              _producer([this](T head) {
-                  if (this->_finite.empty()) {
-                      this->_remaining = false;
-                      return head;
-                  }
-                  T x = this->_finite.front();
-                  this->_finite.pop_front();
-                  return x;
-              }) {
+              _mapper([](T x) { return x; }) {
             // Bind the head to the first element of list
             dropHead();
         }
@@ -117,12 +127,6 @@ namespace imkiva {
         Stream<T> &map(const Mapper<T> &mapper) {
             this->_mapper = compose<T, T, T>(mapper, this->_mapper);
             return *this;
-        }
-
-        template <typename R>
-        Stream<R> map(const Mapper<R> &mapper) {
-            // TODO: construct a new Stream<R>
-            assert(false);
         }
 
     public:
@@ -279,6 +283,28 @@ namespace imkiva {
          * @return Stream
          */
         static Stream<T> of(const std::vector<T> &list) {
+            std::deque<T> d;
+            std::copy(list.begin(), list.end(), std::back_inserter(d));
+            return Stream<T>(std::move(d));
+        }
+
+        /**
+         * Construct a stream from a list.
+         * @param list The list
+         * @return Stream
+         */
+        static Stream<T> of(const std::list<T> &list) {
+            std::deque<T> d;
+            std::copy(list.begin(), list.end(), std::back_inserter(d));
+            return Stream<T>(std::move(d));
+        }
+
+        /**
+        * Construct a stream from a list.
+        * @param list The list
+        * @return Stream
+        */
+        static Stream<T> of(const std::deque<T> &list) {
             std::deque<T> d;
             std::copy(list.begin(), list.end(), std::back_inserter(d));
             return Stream<T>(std::move(d));

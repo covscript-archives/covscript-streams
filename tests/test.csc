@@ -14,13 +14,13 @@ function main()
     streams.of(list).for_each(system.out.println)
 
     system.out.println("")
-    streams.of(list).limit(6).for_each(system.out.println)
+    streams.of(list).for_each(system.out.println)
 
     system.out.println("")
     streams.of(list).filter(greater_than_5).for_each(system.out.println)
 
     system.out.println("")
-    streams.of(list).filter([] (it) -> it > 5).reverse().for_each(system.out.println)
+    streams.of(list).filter([] (it) -> it > 5).for_each(system.out.println)
 
     system.out.println("")
     streams.of(list).map([](it) -> it + 1).for_each(system.out.println)
