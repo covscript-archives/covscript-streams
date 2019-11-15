@@ -4,10 +4,10 @@
 
 #pragma once
 
+#include <functional>
 #include <vector>
 #include <deque>
 #include <list>
-#include <functional>
 
 namespace imkiva {
     template <class A, class B, class C>
