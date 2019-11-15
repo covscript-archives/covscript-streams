@@ -129,12 +129,6 @@ namespace imkiva {
             return *this;
         }
 
-        template <typename R>
-        Stream<R> map(const Mapper<R> &mapper) {
-            // TODO: construct a new Stream<R>
-            assert(false);
-        }
-
     public:
         Stream<T> &drop(int n) {
             while (_remaining && n-- > 0) {
