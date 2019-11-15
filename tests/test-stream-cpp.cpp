@@ -3,6 +3,7 @@
 //
 
 #include <string>
+#include <cassert>
 #include "../stream.hpp"
 
 int main() {
